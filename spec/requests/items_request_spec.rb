@@ -2,33 +2,75 @@ require 'rails_helper'
 
 describe "Items API" do
   it "sends a list of all items" do
-    books = create_list(:items, 3)
+    merchants = create_list(:item, 3)
     get '/api/v1/items'
 
     expect(response).to be_successful
     items = JSON.parse(response.body, symbolize_names: true)
 
-    expect(items.count).to eq(3)
+    expect(items.count).to eq(1)
+    expect(items).to have_key(:data)
+    expect(items[:data]).to be_a(Array)
+    expect(items[:data].count).to eq(3)
 
-    items.each do |book|
-      expect(book).to have_key(:id)
-      expect(book[:id]).to be_an(Integer)
+    items[:data].each do |item|
+      expect(item).to have_key(:id)
+      expect(item[:id]).to be_a(String)
+
+      expect(item).to have_key(:type)
+      expect(item[:type]).to eq("item")
+
+      expect(item).to have_key(:attributes)
+      expect(item[:attributes]).to be_a(Hash)
+
+      expect(item[:attributes]).to have_key(:name)
+      expect(item[:attributes][:name]).to be_a(String)
+
+      expect(item[:attributes]).to have_key(:description)
+      expect(item[:attributes][:description]).to be_a(String)
+
+      expect(item[:attributes]).to have_key(:unit_price)
+      expect(item[:attributes][:unit_price]).to be_a(String)
+
+      expect(item[:attributes]).to have_key(:merchant_id)
+      expect(item[:attributes][:merchant_id]).to be_a(String)
     end
   end
 
   it "can get one item by its id" do
     id = create(:item).id
-  
-    get "/api/v1/books/#{id}"
-  
-    item = JSON.parse(response.body, symbolize_names: true)
-  
+    get "/api/v1/items/#{id}"
+
     expect(response).to be_successful
-  
-    expect(book).to have_key(:id)
-    expect(book[:id]).to eq(id)
-  
+    item_response = JSON.parse(response.body, symbolize_names: true)
+
+    expect(item_response.count).to eq(1)
+    expect(item_response).to have_key(:data)
+    expect(item_response[:data]).to be_a(Hash)
+    expect(item_response[:data].count).to eq(3)
+
+    item = merchant_response[:data]
     
+    expect(item).to have_key(:id)
+    expect(item[:id]).to be_a(String)
+
+    expect(item).to have_key(:type)
+    expect(item[:type]).to eq("item")
+
+    expect(item).to have_key(:attributes)
+    expect(item[:attributes]).to be_a(Hash)
+
+    expect(item[:attributes]).to have_key(:name)
+    expect(item[:attributes][:name]).to be_a(String)
+
+    expect(item[:attributes]).to have_key(:description)
+    expect(item[:attributes][:description]).to be_a(String)
+
+    expect(item[:attributes]).to have_key(:unit_price)
+    expect(item[:attributes][:unit_price]).to be_a(String)
+
+    expect(item[:attributes]).to have_key(:merchant_id)
+    expect(item[:attributes][:merchant_id]).to be_a(String)
   end
 
   # it "can create a new book" do

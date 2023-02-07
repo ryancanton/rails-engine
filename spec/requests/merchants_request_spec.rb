@@ -28,7 +28,7 @@ describe "Merchants API" do
     end
   end
 
-  it "can get one item by its id" do
+  it "can get one merchant by its id" do
     id = create(:merchant).id
     get "/api/v1/merchants/#{id}"
 
@@ -53,6 +53,5 @@ describe "Merchants API" do
 
     expect(merchant[:attributes]).to have_key(:name)
     expect(merchant[:attributes][:name]).to be_a(String)
-    
   end
 end
