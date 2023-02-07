@@ -1,10 +1,10 @@
-class Api::V1::MerchantsController < ApplicationController
+class Api::V1::ItemsController < ApplicationController
   def index
-    
+    render json: ItemsSerializer.new(Item.all)
   end
   
   def show
-    
+    render json: ItemsSerializer.new(Item.find(params[:id]))
   end
 
   def create
@@ -12,7 +12,7 @@ class Api::V1::MerchantsController < ApplicationController
   end
 
   def update
-    
+
   end
 
   def destroy
