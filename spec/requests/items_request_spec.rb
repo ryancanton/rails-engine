@@ -75,6 +75,14 @@ describe "Items API" do
     expect(item[:attributes][:merchant_id]).to be_a(Integer)
   end
 
+  it 'show returns 404 status if merchant id is bad' do
+    merchant = create(:merchant)
+    id = create(:item, merchant_id: merchant.id).id
+    get "/api/v1/items/#{id + 4}"
+
+    expect(response.status).to eq(404)
+  end
+
   it "can create a new item" do
     merchant = create(:merchant)
     item_params = {
@@ -90,10 +98,27 @@ describe "Items API" do
     created_item = Item.last
   
     expect(response).to be_successful
+    expect(response.status).to eq(201)
     expect(created_item.name).to eq(item_params[:name])
     expect(created_item.description).to eq(item_params[:description])
     expect(created_item.unit_price).to eq(item_params[:unit_price])
     expect(created_item.merchant_id).to eq(item_params[:merchant_id])
+  end
+
+
+  it 'create returns error is not every field is completed' do
+    merchant = create(:merchant)
+    item_params = {
+      "name": "value1",
+      "description": "",
+      "unit_price": 100.99,
+      "merchant_id": merchant.id
+    }
+    headers = {"CONTENT_TYPE" => "application/json"}
+  
+    # We include this header to make sure that these params are passed as JSON rather than as plain text
+    post "/api/v1/items", headers: headers, params: JSON.generate(item: item_params)
+    expect(response.status).to eq(422)
   end
 
   it "can update an existing item" do
@@ -108,8 +133,22 @@ describe "Items API" do
     item = Item.find_by(id: id)
   
     expect(response).to be_successful
+    expect(response.status).to eq(202)
     expect(item.name).to_not eq(previous_name)
     expect(item.name).to eq("Charlotte's Web")
+  end
+
+  it 'update returns 404 status if item id is bad' do
+    merchant = create(:merchant)
+    id = create(:item, merchant_id: merchant.id).id
+    previous_name = Item.last.name
+    item_params = { name: "Charlotte's Web" }
+    headers = {"CONTENT_TYPE" => "application/json"}
+  
+    # We include this header to make sure that these params are passed as JSON rather than as plain text
+    patch "/api/v1/items/#{id + 4}", headers: headers, params: JSON.generate({item: item_params})
+
+    expect(response.status).to eq(404)
   end
 
   it "can destroy an item" do
@@ -125,6 +164,35 @@ describe "Items API" do
     expect{Item.find(id)}.to raise_error(ActiveRecord::RecordNotFound)
   end
 
+  it "destroying an item destroys all invoices that have only that item" do
+    merchant = create(:merchant)
+    customer = create(:customer)
+    item_1 = create(:item, merchant_id: merchant.id)
+    item_2 = create(:item, merchant_id: merchant.id)
+    invoice_1 = Invoice.create!(status: 'pending', merchant_id: merchant.id, customer_id: customer.id)
+    invoice_2 = Invoice.create!(status: 'pending', merchant_id: merchant.id, customer_id: customer.id)
+    invoice_3 = Invoice.create!(status: 'pending', merchant_id: merchant.id, customer_id: customer.id)
+    InvoiceItem.create!(item_id: item_1.id, invoice_id: invoice_1.id, quantity: 12, unit_price: item_1.unit_price)
+    InvoiceItem.create!(item_id: item_1.id, invoice_id: invoice_2.id, quantity: 11, unit_price: item_1.unit_price)
+    InvoiceItem.create!(item_id: item_1.id, invoice_id: invoice_3.id, quantity: 10, unit_price: item_1.unit_price)
+    InvoiceItem.create!(item_id: item_2.id, invoice_id: invoice_3.id, quantity: 9, unit_price: item_2.unit_price)
+    
+    delete "/api/v1/items/#{item_1.id}"
+
+    expect(response).to be_successful
+    expect(Item.count).to eq(1)
+    expect(Invoice.count).to eq(1)
+    expect(Invoice.first.id).to eq(invoice_3.id)
+  end
+
+  it 'delete returns 404 status if item id id is bad' do
+    merchant = create(:merchant)
+    id = create(:item, merchant_id: merchant.id).id
+    delete "/api/v1/items/#{id + 4}"
+
+    expect(response.status).to eq(404)
+  end
+
   it "can get a list of items specific to a merchant" do
     merchant = create(:merchant)
     items = create_list(:item, 3, merchant_id: merchant.id)
@@ -138,5 +206,13 @@ describe "Items API" do
     items[:data].each do |item|
       expect(item[:attributes][:merchant_id]).to eq(merchant.id)
     end
+  end
+
+  it 'returns 404 status if merchant id is bad' do
+    merchant = create(:merchant)
+    items = create_list(:item, 3, merchant_id: merchant.id)
+    get "/api/v1/merchants/#{merchant.id + 4}/items"
+
+    expect(response.status).to eq(404)
   end
 end

@@ -54,4 +54,11 @@ describe "Merchants API" do
     expect(merchant[:attributes]).to have_key(:name)
     expect(merchant[:attributes][:name]).to be_a(String)
   end
+
+  it 'show returns status 404 if merchant id is bad' do
+    merchant = create(:merchant)
+    get "/api/v1/merchants/#{merchant.id + 4}"
+
+    expect(response.status).to eq(404)
+  end
 end
