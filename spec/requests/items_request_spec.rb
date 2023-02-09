@@ -90,6 +90,7 @@ describe "Items API" do
     created_item = Item.last
   
     expect(response).to be_successful
+    expect(response.status).to eq(201)
     expect(created_item.name).to eq(item_params[:name])
     expect(created_item.description).to eq(item_params[:description])
     expect(created_item.unit_price).to eq(item_params[:unit_price])
@@ -108,6 +109,7 @@ describe "Items API" do
     item = Item.find_by(id: id)
   
     expect(response).to be_successful
+    expect(response.status).to eq(202)
     expect(item.name).to_not eq(previous_name)
     expect(item.name).to eq("Charlotte's Web")
   end
@@ -123,6 +125,27 @@ describe "Items API" do
     expect(response).to be_successful
     expect(Item.count).to eq(0)
     expect{Item.find(id)}.to raise_error(ActiveRecord::RecordNotFound)
+  end
+
+  it "destroying an item destroys all invoices that have only that item" do
+    merchant = create(:merchant)
+    customer = create(:customer)
+    item_1 = create(:item, merchant_id: merchant.id)
+    item_2 = create(:item, merchant_id: merchant.id)
+    invoice_1 = Invoice.create!(status: 'pending', merchant_id: merchant.id, customer_id: customer.id)
+    invoice_2 = Invoice.create!(status: 'pending', merchant_id: merchant.id, customer_id: customer.id)
+    invoice_3 = Invoice.create!(status: 'pending', merchant_id: merchant.id, customer_id: customer.id)
+    InvoiceItem.create!(item_id: item_1.id, invoice_id: invoice_1.id, quantity: 12, unit_price: item_1.unit_price)
+    InvoiceItem.create!(item_id: item_1.id, invoice_id: invoice_2.id, quantity: 11, unit_price: item_1.unit_price)
+    InvoiceItem.create!(item_id: item_1.id, invoice_id: invoice_3.id, quantity: 10, unit_price: item_1.unit_price)
+    InvoiceItem.create!(item_id: item_2.id, invoice_id: invoice_3.id, quantity: 9, unit_price: item_2.unit_price)
+    
+    delete "/api/v1/items/#{item_1.id}"
+
+    expect(response).to be_successful
+    expect(Item.count).to eq(1)
+    expect(Invoice.count).to eq(1)
+    expect(Invoice.first.id).to eq(invoice_3.id)
   end
 
   it "can get a list of items specific to a merchant" do

@@ -1,6 +1,6 @@
 class Api::V1::ItemsController < ApplicationController
   def index
-    if params[:merchant_id]
+    if params[:merchant_id] && Merchant.find(params[:merchant_id])
       items = Item.where('items.merchant_id = ?', params[:merchant_id])
     else
       items = Item.all
@@ -9,21 +9,26 @@ class Api::V1::ItemsController < ApplicationController
   end
   
   def show
-    render json: ItemsSerializer.new(Item.find(params[:id]))
+    render json: ItemsSerializer.new(Item.find(params[:id].to_i))
   end
 
   def create
     new_item = Item.create(item_params)
-    render json: ItemsSerializer.new(new_item)
+    render(status: 201, json: ItemsSerializer.new(new_item))
   end 
 
   def update
-    item = Item.update(params[:id], item_params)
-    render json: ItemsSerializer.new(item)
+    if params[:merchant_id] && !Merchant.find(params[:merchant_id])
+      render_not_found_response
+    end
+    item = Item.update(params[:id].to_i, item_params)
+    render(status: 202, json: ItemsSerializer.new(item))
   end
 
   def destroy
-    render json: ItemsSerializer.new(Item.destroy(params[:id]))
+    item = Item.find(params[:id])
+    item.delete_solo_invoices
+    render json: ItemsSerializer.new(item.destroy)
   end
 
   private
