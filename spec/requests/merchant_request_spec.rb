@@ -28,4 +28,12 @@ RSpec.describe 'Merchant API' do
     expect(merchant[:attributes]).to have_key(:name)
     expect(merchant[:attributes][:name]).to be_a(String)
   end
+
+  it 'returns 404 is item id is bad' do
+    merchant = create(:merchant)
+    id = create(:item, merchant_id: merchant.id).id
+    get "/api/v1/items/#{id + 4}/merchant"
+
+    expect(response.status).to eq(404)
+  end
 end
