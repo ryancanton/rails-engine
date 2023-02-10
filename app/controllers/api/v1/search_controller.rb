@@ -3,7 +3,7 @@ class Api::V1::SearchController < ApplicationController
     if params_valid?(params)
       merchant = Merchant.find_by_name(params[:name])
       if merchant == nil
-        render(status: 400, json: { "errors": { } })
+        render(status: 400, json: { "data": {"errors": {} }})
       else
         render json: MerchantsSerializer.new(merchant)
       end
