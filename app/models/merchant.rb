@@ -4,4 +4,8 @@ class Merchant < ApplicationRecord
   has_many :invoices
   has_many :customers, through: :invoices
   has_many :transactions, through: :invoices
+
+  def self.find_by_name(name)
+    self.where('name ILIKE ?', "%#{name.downcase}%")[0]
+  end
 end
