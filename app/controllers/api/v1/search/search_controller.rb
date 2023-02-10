@@ -1,4 +1,4 @@
-class Api::V1::SearchController < ApplicationController
+class Api::V1::Search::SearchController < Api::V1::Search::BaseController
   def find
     if params_valid?(params)
       merchant = Merchant.find_by_name(params[:name])
@@ -7,7 +7,6 @@ class Api::V1::SearchController < ApplicationController
       else
         render json: MerchantsSerializer.new(merchant)
       end
-      
     else
       render(status: 400)
     end
