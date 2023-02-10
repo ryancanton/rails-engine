@@ -18,7 +18,8 @@ class Item < ApplicationRecord
   def self.get_max_and_min(search_params)
     if search_params[:min_price] == nil
       search_params[:min_price] = 0
-    elsif search_params[:max_price] == nil
+    end
+    if search_params[:max_price] == nil
       search_params[:max_price] = Item.maximum(:unit_price)
     end
     {max: search_params[:max_price], min: search_params[:min_price]}
